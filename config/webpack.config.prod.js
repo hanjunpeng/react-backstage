@@ -1,5 +1,5 @@
 'use strict';
-
+const autoprefixer = require('autoprefixer')
 const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
@@ -32,14 +32,7 @@ const env = getClientEnvironment(publicUrl);
 if (env.stringified['process.env'].NODE_ENV !== '"production"') {
   throw new Error('Production builds must have NODE_ENV=production.');
 }
-
 const useTypeScript = fs.existsSync(paths.appTsConfig);
-
-const cssRegex = /\.css$/;
-const cssModuleRegex = /\.module\.css$/;
-const sassRegex = /\.(scss|sass)$/;
-const sassModuleRegex = /\.module\.(scss|sass)$/;
-
 const getStyleLoaders = (cssOptions, preProcessor) => {
   const loaders = [
     {
@@ -83,18 +76,16 @@ const getStyleLoaders = (cssOptions, preProcessor) => {
 
 module.exports = {
   mode: 'production',
+  // 当 webpack 遇到第一个错，标红抛出并中断运行
   bail: true,
   devtool: shouldUseSourceMap ? 'source-map' : false,
   entry: [paths.appIndexJs],
   output: {
     path: paths.appBuild,
-    filename: 'static/js/[name].[chunkhash:8].js',
-    chunkFilename: 'static/js/[name].[chunkhash:8].chunk.js',
+    filename: 'static/js/[name].js',
+    chunkFilename: 'static/js/[name].js',
     publicPath: publicPath,
-    devtoolModuleFilenameTemplate: info =>
-      path
-        .relative(paths.appSrc, info.absoluteResourcePath)
-        .replace(/\\/g, '/'),
+    devtoolModuleFilenameTemplate: info => path.relative(paths.appSrc, info.absoluteResourcePath).replace(/\\/g, '/'),
   },
   optimization: {
     minimizer: [
@@ -237,8 +228,8 @@ module.exports = {
             },
           },
           {
-            test: cssRegex,
-            exclude: cssModuleRegex,
+            test: /\.css$/,
+            exclude: /\.module\.css$/,
             loader: getStyleLoaders({
               importLoaders: 1,
               sourceMap: shouldUseSourceMap,
@@ -246,7 +237,7 @@ module.exports = {
             sideEffects: true,
           },
           {
-            test: cssModuleRegex,
+            test: /\.module\.css$/,
             loader: getStyleLoaders({
               importLoaders: 1,
               sourceMap: shouldUseSourceMap,
@@ -255,8 +246,39 @@ module.exports = {
             }),
           },
           {
-            test: sassRegex,
-            exclude: sassModuleRegex,
+            test: /\.less$/,
+            use: [
+              require.resolve('style-loader'),
+              require.resolve('css-loader'),
+              {
+                loader: require.resolve('postcss-loader'),
+                options: {
+                  ident: 'postcss', // https://webpack.js.org/guides/migrating/#complex-options
+                  plugins: () => [
+                    require('postcss-flexbugs-fixes'),
+                    autoprefixer({
+                      browsers: [
+                        '>1%',
+                        'last 4 versions',
+                        'Firefox ESR',
+                        'not ie < 9', // React doesn't support IE8 anyway
+                      ],
+                      flexbox: 'no-2009',
+                    }),
+                  ],
+                },
+              },
+              {
+                loader: require.resolve('less-loader'),
+                options: {
+                  modifyVars: { "@primary-color": "#1890ff" },
+                },
+              },
+            ]
+          },
+          {
+            test: /\.(scss|sass)$/,
+            exclude: /\.module\.(scss|sass)$/,
             loader: getStyleLoaders(
               {
                 importLoaders: 2,
@@ -267,7 +289,7 @@ module.exports = {
             sideEffects: true,
           },
           {
-            test: sassModuleRegex,
+            test: /\.module\.(scss|sass)$/,
             loader: getStyleLoaders(
               {
                 importLoaders: 2,

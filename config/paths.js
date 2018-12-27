@@ -1,9 +1,8 @@
 'use strict';
-
 const path = require('path');
 const fs = require('fs');
 const url = require('url');
-
+// 确保任何项目的链接已经成功加载
 const appDirectory = fs.realpathSync(process.cwd());
 const resolveApp = relativePath => path.resolve(appDirectory, relativePath);
 

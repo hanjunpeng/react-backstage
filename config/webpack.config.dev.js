@@ -89,6 +89,7 @@ module.exports = {
       .filter(ext => useTypeScript || !ext.includes('ts')),
     alias: {
       'react-native': 'react-native-web',
+      '@': paths.appSrc
     },
     plugins: [
       PnpWebpackPlugin,
